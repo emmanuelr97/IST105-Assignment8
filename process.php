@@ -1,4 +1,6 @@
 <?php
+header('Content-Type: application/json'); 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mac = $_POST['mac_address'];
     $dhcp_version = $_POST['dhcp_version'];
