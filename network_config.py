@@ -72,48 +72,50 @@ def assign_ipv6(mac, subnet, leases):
     return ipv6
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mac', required=True)
-    parser.add_argument('--dhcp-version', required=True)
-    args = parser.parse_args()
+    try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--mac', required=True)
+        parser.add_argument('--dhcp-version', required=True)
+        args = parser.parse_args()
 
-    leases = load_leases()
-    used_ips = {lease['ipv4']['ip'] for mac in leases if 'ipv4' in leases[mac]}
+        leases = load_leases()
+        used_ips = {lease['ipv4']['ip'] for mac in leases if 'ipv4' in leases[mac]}
 
-    if not validate_mac(args.mac):
-        print(json.dumps({'error': 'Invalid MAC'}))
-        return
+        if not validate_mac(args.mac):
+            print(json.dumps({'error': 'Invalid MAC'}))
+            return
 
-    mac = args.mac.lower()
-    dhcp_version = args.dhcp_version
+        mac = args.mac.lower()
+        dhcp_version = args.dhcp_version
 
-    ip = None
-    if mac in leases:
-        if dhcp_version == 'DHCPv4' and 'ipv4' in leases[mac]:
-            ip = leases[mac]['ipv4']['ip']
-        elif dhcp_version == 'DHCPv6' and 'ipv6' in leases[mac]:
-            ip = leases[mac]['ipv6']['ip']
+        ip = None
+        if mac in leases:
+            if dhcp_version == 'DHCPv4' and 'ipv4' in leases[mac]:
+                ip = leases[mac]['ipv4']['ip']
+            elif dhcp_version == 'DHCPv6' and 'ipv6' in leases[mac]:
+                ip = leases[mac]['ipv6']['ip']
 
-    if not ip:
-        if dhcp_version == 'DHCPv4':
-            ip = assign_ipv4(mac, leases, used_ips)
-            subnet = subnet_v4
-        else:
-            ip = assign_ipv6(mac, subnet_v6, leases)
-            subnet = subnet_v6
+        if not ip:
+            if dhcp_version == 'DHCPv4':
+                ip = assign_ipv4(mac, leases, used_ips)
+                subnet = subnet_v4
+            else:
+                ip = assign_ipv6(mac, subnet_v6, leases)
+                subnet = subnet_v6
 
-    if not ip:
-        print(json.dumps({'error': 'No IP available'}))
-        return
+        if not ip:
+            print(json.dumps({'error': 'No IP available'}))
+            return
 
-    save_leases(leases)
-    response = {
-        'mac_address': mac,
-        'assigned_ipv4' if dhcp_version == 'DHCPv4' else 'assigned_ipv6': ip,
-        'lease_time': f"{lease_duration} seconds",
-        'subnet': subnet
-    }
-    print(json.dumps(response))
-
+        save_leases(leases)
+        response = {
+            'mac_address': mac,
+            'assigned_ipv4' if dhcp_version == 'DHCPv4' else 'assigned_ipv6': ip,
+            'lease_time': f"{lease_duration} seconds",
+            'subnet': subnet
+        }
+        print(json.dumps(response))
+    except Exception as e:
+        print(json.dumps({'error': f'Server error: {str(e)}'}))
 if __name__ == '__main__':
     main()

@@ -6,7 +6,8 @@
 <body>
     <h2>Request an IP Address</h2>
     <form action="process.php" method="post">
-        MAC Address: <input type="text" name="mac_address" required pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"><br>
+        MAC Address: <input type="text" name="mac_address" required 
+        pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"><br>
         DHCP Version: 
         <select name="dhcp_version" required>
             <option value="DHCPv4">DHCPv4</option>
