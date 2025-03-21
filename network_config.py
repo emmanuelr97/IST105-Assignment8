@@ -28,16 +28,26 @@ def validate_mac(mac):
     return bool(pattern.match(mac))
 
 def generate_eui64(mac, subnet):
-    mac_clean = re.sub(r'[:.-]', '', mac).lower()
+    # Clean MAC address
+    mac_clean = re.sub(r'[^a-fA-F0-9]', '', mac).lower()
     if len(mac_clean) != 12:
         raise ValueError("Invalid MAC address")
-    first_byte = int(mac_clean[:2], 16)
-    first_byte ^= 0x02
-    modified = f"{first_byte:02x}" + mac_clean[2:]
-    modified = modified[:6] + 'fffe' + modified[6:]
-    eui64 = ipaddress.EUI64(modified)
-    network = ipaddress.IPv6Network(subnet)
-    return str(network.network_address + int(eui64))
+
+    # Split MAC into two parts and insert FFFE
+    first_part = mac_clean[:6]
+    second_part = mac_clean[6:]
+    modified = first_part + 'fffe' + second_part
+
+    # Invert the universal/local bit (7th bit)
+    first_byte = int(modified[:2], 16)
+    first_byte ^= 0x02  # Flip the 7th bit
+    modified = f"{first_byte:02x}" + modified[2:]
+
+    # Format as IPv6 address
+    ipv6_net = ipaddress.IPv6Network(subnet, strict=False)
+    eui64 = ipaddress.IPv6Address(int(ipv6_net.network_address) | (int(modified, 16) & 0xFFFFFFFFFFFFFFFF))
+    
+    return str(eui64)
 
 def assign_ipv4(mac, leases, used_ips):
     if mac in leases and 'ipv4' in leases[mac]:
